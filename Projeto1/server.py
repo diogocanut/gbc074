@@ -1,6 +1,20 @@
 import socket
 import threading
+import time
+import grpc
 from queue import Queue
+from concurrent import futures
+
+import helloworld_pb2
+import helloworld_pb2_grpc
+
+_ONE_DAY_IN_SECONDS = 60 * 60 * 24
+
+
+class Greeter(helloworld_pb2_grpc.GreeterServicer):
+
+    def SayHello(self, request, context):
+        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
 
 
 class Server:
@@ -30,7 +44,14 @@ class Server:
                                        target=self.process_cmd)
         exec_thread.start()
 
-        return recv_thread, exec_thread
+        grpc_thread = threading.Thread(
+            name='grpc_thread',
+            target=self.serve
+        )
+
+        grpc_thread.start()
+
+        return recv_thread, exec_thread, grpc_thread
 
     def write_cmd_log(self, result):
         if self.log_queue.empty():
@@ -124,3 +145,14 @@ class Server:
         self._sock.sendto(result.encode('utf-8'), dequeue[0])
         self.write_map_log()
         return success
+
+    def serve(self):
+        server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
+        helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+        server.add_insecure_port('[::]:50051')
+        server.start()
+        try:
+            while True:
+                time.sleep(_ONE_DAY_IN_SECONDS)
+        except KeyboardInterrupt:
+            server.stop(0)

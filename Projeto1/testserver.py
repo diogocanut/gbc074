@@ -8,4 +8,4 @@ if __name__ == '__main__':
 
     print("=====================SERVER-SIDE=====================")
     s = server.Server(*addr)
-    a, b = s.setup_threads()
+    a, b, c = s.setup_threads()
