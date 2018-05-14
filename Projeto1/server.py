@@ -5,16 +5,23 @@ import grpc
 from queue import Queue
 from concurrent import futures
 
-import helloworld_pb2
-import helloworld_pb2_grpc
+import signalupdate_pb2
+import signalupdate_pb2_grpc
 
 _ONE_DAY_IN_SECONDS = 60 * 60 * 24
 
+updated = []
 
-class Greeter(helloworld_pb2_grpc.GreeterServicer):
 
-    def SayHello(self, request, context):
-        return helloworld_pb2.HelloReply(message='Hello, %s!' % request.name)
+class Greeter(signalupdate_pb2_grpc.GreeterServicer):
+
+    def SignalUpdate(self, request, context):
+        if len(updated) > 0:
+            updated_dict = updated.pop(0)
+            return signalupdate_pb2.UpdateReply(
+                message='Key: ' + str(updated_dict['key']) + ' updated message to: ' + updated_dict['value'])
+        else:
+            return signalupdate_pb2.UpdateReply(message='')
 
 
 class Server:
@@ -130,6 +137,11 @@ class Server:
                 success = 1
             elif entry[0] == 'update':
                 self.cmd_map.update({key: value})
+                updated_dict = {
+                    'value': value,
+                    'key': key,
+                }
+                updated.append(updated_dict)
                 success = 1
             elif entry[0] == 'delete':
                 value = key_exists
@@ -148,7 +160,7 @@ class Server:
 
     def serve(self):
         server = grpc.server(futures.ThreadPoolExecutor(max_workers=10))
-        helloworld_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
+        signalupdate_pb2_grpc.add_GreeterServicer_to_server(Greeter(), server)
         server.add_insecure_port('[::]:50051')
         server.start()
         try:

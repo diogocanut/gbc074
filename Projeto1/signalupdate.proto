@@ -9,15 +9,15 @@ package helloworld;
 
 service Greeter {
   // Sends a greeting
-  rpc SayHello (HelloRequest) returns (HelloReply) {}
+  rpc SignalUpdate (UpdateRequest) returns (UpdateReply) {}
 }
 
 // The request message containing the user's name.
-message HelloRequest {
+message UpdateRequest {
   string name = 1;
 }
 
 // The response message containing the greetings
-message HelloReply {
+message UpdateReply {
   string message = 1;
 }
