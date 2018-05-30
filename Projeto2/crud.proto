@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package helloworld;
+
+service Map {
+  rpc Crud (CommandRequest) returns (CommandReply) {}
+  rpc Track(TrackReq) returns (stream CommandReply) {}
+}
+
+message TrackReq {
+    uint32 key = 1;
+}
+
+message CommandRequest {
+  string name = 1;
+  uint32 key = 2;
+  string value = 3;
+}
+
+message CommandReply {
+  string message = 1;
+}
